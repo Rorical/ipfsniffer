@@ -1,0 +1,29 @@
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 20px;
+}
+
+.home-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.home-logo h1 {
+  font-size: 32px;
+  font-weight: 500;
+  color: #202124;
+  margin: 16px 0 0 0;
+  letter-spacing: -1px;
+}
+
+.home-footer {
+  margin-top: 32px;
+  color: #5f6368;
+  font-size: 14px;
+}

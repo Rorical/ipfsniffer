@@ -179,8 +179,8 @@ func (w *Worker) handleMsg(ctx context.Context, msg *nats.Msg) error {
 	// Enforce max_dag_nodes as raw IPLD blocks during traversal (single-pass).
 	// We wrap the DAGService used by unixfs nodes so each underlying Get() counts.
 	dagSvc := w.IPFS.Raw.DAG
-	if lim.maxDagNodes		dagSvc > 0 {
- = newCountingDAG(dagSvc, lim.maxDagNodes)
+	if lim.maxDagNodes > 0 {
+		dagSvc = newCountingDAG(dagSvc, lim.maxDagNodes)
 	}
 
 	// Resolve the initial IPLD node with retry logic
@@ -216,6 +216,9 @@ func (w *Worker) handleMsg(ctx context.Context, msg *nats.Msg) error {
 		// Fill common envelope-ish fields and publish.
 		if d.FetchedAt == "" {
 			d.FetchedAt = time.Now().UTC().Format(time.RFC3339Nano)
+		}
+		if d.ObservedAt == "" {
+			d.ObservedAt = in.GetData().GetObservedAt()
 		}
 		out := &ipfsnifferv1.FetchResult{
 			V:     1,

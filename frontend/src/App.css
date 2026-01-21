@@ -1,0 +1,28 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: arial, sans-serif;
+  font-size: 14px;
+  color: #202124;
+  background: #fff;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+a {
+  color: #1a0dab;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+strong {
+  font-weight: 500;
+}

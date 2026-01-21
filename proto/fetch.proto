@@ -20,6 +20,7 @@ message FetchRequestData {
   FetchLimits limits = 3;
   FetchPolicy policy = 4;
   FetchContent content = 5;
+  string observed_at = 6;
 }
 
 message FetchLimits {
@@ -60,6 +61,7 @@ message FetchResultData {
   string skip_reason = 10;
   string error = 11;
   string fetched_at = 12;
+  string observed_at = 13;
 }
 
 message FetchContentResult {

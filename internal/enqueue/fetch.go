@@ -156,10 +156,10 @@ func (w *FetchEnqueuer) handleDiscovered(ctx context.Context, msg *nats.Msg) err
 	}
 
 	logger.Info("enqueue-fetch: enqueuing fetch request", "root_cid", rootCID, "path", path)
-	return w.enqueueFetch(ctx, in.Trace, rootCID, path)
+	return w.enqueueFetch(ctx, in.Trace, rootCID, path, d.GetObservedAt())
 }
 
-func (w *FetchEnqueuer) enqueueFetch(ctx context.Context, trace *ipfsnifferv1.TraceContext, rootCID, path string) error {
+func (w *FetchEnqueuer) enqueueFetch(ctx context.Context, trace *ipfsnifferv1.TraceContext, rootCID, path string, observedAt string) error {
 	// Per-target dedupe so we don't enqueue infinite work for hot CIDs.
 	key := rootCID + ":" + path
 	seen, err := w.Dedupe.Seen(ctx, w.Redis, key)
@@ -176,8 +176,9 @@ func (w *FetchEnqueuer) enqueueFetch(ctx context.Context, trace *ipfsnifferv1.Tr
 		Ts:    time.Now().UTC().Format(time.RFC3339Nano),
 		Trace: trace,
 		Data: &ipfsnifferv1.FetchRequestData{
-			RootCid: rootCID,
-			Path:    path,
+			RootCid:    rootCID,
+			Path:       path,
+			ObservedAt: observedAt,
 			Limits: &ipfsnifferv1.FetchLimits{
 				MaxTotalBytes: w.Limits.MaxTotalBytes,
 				MaxFileBytes:  w.Limits.MaxFileBytes,

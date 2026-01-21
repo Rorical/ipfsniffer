@@ -1,0 +1,59 @@
+.logo {
+  display: inline-block;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+.logo-small {
+  width: 24px;
+  height: 24px;
+}
+
+.logo-medium {
+  width: 48px;
+  height: 48px;
+}
+
+.logo-large {
+  width: 120px;
+  height: 120px;
+}
+
+.logo-normal {
+  width: 64px;
+  height: 64px;
+}
+
+.logo-nodes {
+  animation: nodesPulse 2s ease-in-out infinite;
+}
+
+.logo-magnifier {
+  animation: magnifierShine 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes nodesPulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes magnifierShine {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}

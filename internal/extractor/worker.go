@@ -170,8 +170,12 @@ func (w *Worker) handle(ctx context.Context, msg *nats.Msg) error {
 			TextTruncated:  textTruncated,
 			NamesText:      filenameFromPath(d.GetPath()),
 			Sources:        nil,
-			ObservedAt:     "",
+			ObservedAt:     d.GetObservedAt(),
 			ProcessedAt:    time.Now().UTC().Format(time.RFC3339Nano),
+			Cid:            d.GetRootCid(),
+			FetchedAt:      d.GetFetchedAt(),
+			SkipReason:     d.GetSkipReason(),
+			IpnsName:       "",
 		},
 	}
 

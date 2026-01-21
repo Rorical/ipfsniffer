@@ -29,4 +29,8 @@ message DocReadyData {
   repeated string sources = 12;
   string observed_at = 13;
   string processed_at = 14;
+  string cid = 15;
+  string fetched_at = 16;
+  string skip_reason = 17;
+  string ipns_name = 18;
 }
