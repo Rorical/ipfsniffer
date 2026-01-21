@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message ExtractRequest {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  ExtractRequestData data = 5;
+}
+
+message ExtractRequestData {
+  string root_cid = 1;
+  string path = 2;
+  string mime = 3;
+  int64 size_bytes = 4;
+  ContentRef content_ref = 5;
+  ExtractorConfig extractor = 6;
+}
+
+message ContentRef {
+  string mode = 1;
+  string inline_base64 = 2;
+}
+
+message ExtractorConfig {
+  string preferred = 1;
+  int64 timeout_ms = 2;
+  int64 max_text_bytes = 3;
+}

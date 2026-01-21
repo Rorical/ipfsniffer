@@ -1,0 +1,52 @@
+services:
+  nats:
+    image: nats:2.10.12
+    command: ["-js", "-m", "8222"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    # nats image is extremely minimal (no /bin/sh, no curl/wget).
+    # Use a trivial no-op healthcheck and rely on clients to retry.
+    healthcheck:
+      test: ["CMD", "/nats-server", "--help"]
+      interval: 5s
+      timeout: 2s
+      retries: 60
+      start_period: 2s
+
+  redis:
+    image: redis:7.2-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=admin
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9200"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+
+  tika:
+    image: apache/tika:2.9.1.0
+    ports:
+      - "9998:9998"
+    # Tika image may not include curl/wget; use a no-op healthcheck.
+    healthcheck:
+      test: ["CMD", "java", "-version"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 10s

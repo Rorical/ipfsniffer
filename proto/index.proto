@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message IndexRequest {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  IndexRequestData data = 5;
+}
+
+message IndexRequestData {
+  string index = 1;
+  string doc_id = 2;
+  string op = 3;
+  google.protobuf.Struct document = 4;
+}

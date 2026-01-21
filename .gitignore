@@ -1,0 +1,56 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Build artifacts
+bin/
+build/
+dist/
+
+# Go module cache
+go/pkg/mod/
+vendor/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Coverage and test outputs
+coverage.out
+*.coverprofile
+*.html
+
+# Environment and secrets (never commit these)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# Logs
+*.log
+logs/
+
+# Docker
+.docker/
+
+# OS files
+Thumbs.db

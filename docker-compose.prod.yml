@@ -1,0 +1,364 @@
+services:
+  # Public HTTP entrypoint
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: ipfsniffer-server:latest
+    restart: unless-stopped
+    depends_on:
+      opensearch:
+        condition: service_started
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_HTTP_ADDR=0.0.0.0:8080
+      - IPFSNIFFER_OPENSEARCH_URL=http://opensearch:9200
+      # Server always queries alias
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_TIKA_URL=http://tika:9998
+      # Avoid noisy exporter failures unless you provide a collector
+      - IPFSNIFFER_OTEL_DISABLED=1
+      # If enabling:
+      # - IPFSNIFFER_OTEL_DISABLED=0
+      # - IPFSNIFFER_OTEL_ENDPOINT=otel-collector:4318
+    ports:
+      - "8080:8080"
+
+  # Worker replicas: scale these up/down.
+  #
+  # Important: Kubo uses a repo lock file, so you cannot share the same repo volume across multiple
+  # Kubo-using containers. Each Kubo role gets its own repo volume.
+
+  init-kubo-repo-discovery:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_discovery:/data/ipfsrepo
+
+  init-kubo-repo-resolver:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_resolver:/data/ipfsrepo
+
+  init-kubo-repo-dht:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_dht:/data/ipfsrepo
+
+  init-kubo-repo-fetcher:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_fetcher:/data/ipfsrepo
+
+  init-kubo-repo-stream:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_stream:/data/ipfsrepo
+
+  init-kubo-repo-ipnsdht:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_ipnsdht:/data/ipfsrepo
+
+  init-kubo-repo-ipnspubsub:
+    image: busybox:1.36
+    command: ["sh", "-c", "mkdir -p /data/ipfsrepo && chown -R 65532:65532 /data/ipfsrepo && chmod 700 /data/ipfsrepo"]
+    volumes:
+      - kubo_repo_ipnspubsub:/data/ipfsrepo
+
+  worker-discovery-pubsub:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: ipfsniffer-worker:latest
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-discovery
+      - nats
+      - redis
+      - tika
+      - opensearch
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=discovery-pubsub
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_OPENSEARCH_URL=http://opensearch:9200
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_TIKA_URL=http://tika:9998
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_DISCOVERY_DEDUPE_TTL=24h
+      - IPFSNIFFER_OTEL_DISABLED=1
+      # Configure topics explicitly in prod
+      # - IPFSNIFFER_DISCOVERY_PUBSUB_TOPICS=ipfs.pubsub.chat,fil
+    volumes:
+      - kubo_repo_discovery:/data/ipfsrepo
+
+  worker-discovery-dht:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: ipfsniffer-worker:latest
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-dht
+      - nats
+      - redis
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=discovery-dht
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_DISCOVERY_DEDUPE_TTL=24h
+      - IPFSNIFFER_OTEL_DISABLED=1
+    # Optionally expose swarm ports to increase inbound DHT traffic.
+    ports:
+      - "4002:4001/tcp"
+      - "4002:4001/udp"
+    volumes:
+      - kubo_repo_dht:/data/ipfsrepo
+
+  worker-discovery-ipns-dht:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: ipfsniffer-worker:latest
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-ipnsdht
+      - nats
+      - redis
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=discovery-ipns-dht
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_DISCOVERY_DEDUPE_TTL=24h
+      - IPFSNIFFER_OTEL_DISABLED=1
+    # Expose swarm ports to increase chance of seeing DHT traffic.
+    # If you already run something on 4001, change these.
+    ports:
+      - "4001:4001/tcp"
+      - "4001:4001/udp"
+    volumes:
+      - kubo_repo_ipnsdht:/data/ipfsrepo
+
+  worker-discovery-ipns-pubsub:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: ipfsniffer-worker:latest
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-ipnspubsub
+      - nats
+      - redis
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=discovery-ipns-pubsub
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_DISCOVERY_DEDUPE_TTL=24h
+      - IPFSNIFFER_DISCOVERY_IPNS_PUBSUB_POLL=10m
+      # Provide a seed list of active IPNS names (peer IDs or libp2p-key CIDs).
+      # Example: k51qzi5uqu5dl... , k51qzi5uqu5dk...
+      # - IPFSNIFFER_DISCOVERY_IPNS_PUBSUB_NAMES=...
+      - IPFSNIFFER_OTEL_DISABLED=1
+    volumes:
+      - kubo_repo_ipnspubsub:/data/ipfsrepo
+
+  worker-enqueue-fetch:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - redis
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=enqueue-fetch
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_REDIS_ADDR=redis:6379
+      - IPFSNIFFER_OTEL_DISABLED=1
+      # Fetch job defaults (tune for production)
+      - IPFSNIFFER_FETCH_MAX_TOTAL_BYTES=104857600
+      - IPFSNIFFER_FETCH_MAX_FILE_BYTES=10485760
+      - IPFSNIFFER_FETCH_MAX_DAG_NODES=200000
+      - IPFSNIFFER_FETCH_MAX_DEPTH=64
+      - IPFSNIFFER_FETCH_TIMEOUT=30s
+      - IPFSNIFFER_FETCH_INLINE_MAX_BYTES=262144
+      - IPFSNIFFER_FETCH_SKIP_EXT=.zip,.tar,.gz,.tgz,.mp4,.mp3,.png,.jpg,.jpeg,.gif,.webp
+      - IPFSNIFFER_FETCH_SKIP_MIME_PREFIX=video/,audio/,image/
+
+  worker-resolver-ipns:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-resolver
+      - nats
+      - opensearch
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=resolver-ipns
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_OPENSEARCH_URL=http://opensearch:9200
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_OTEL_DISABLED=1
+    volumes:
+      - kubo_repo_resolver:/data/ipfsrepo
+
+  worker-fetcher:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-fetcher
+      - nats
+      - opensearch
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=fetcher
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_OPENSEARCH_URL=http://opensearch:9200
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_OTEL_DISABLED=1
+    volumes:
+      - kubo_repo_fetcher:/data/ipfsrepo
+
+  worker-stream-server:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - init-kubo-repo-stream
+      - nats
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=stream-server
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_KUBO_REPO=/data/ipfsrepo
+      - IPFSNIFFER_OTEL_DISABLED=1
+    volumes:
+      - kubo_repo_stream:/data/ipfsrepo
+
+  worker-extractor:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - tika
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=extractor
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_TIKA_URL=http://tika:9998
+      - IPFSNIFFER_TIKA_TIMEOUT=60s
+      - IPFSNIFFER_TIKA_MAX_TEXT_BYTES=2000000
+      - IPFSNIFFER_OTEL_DISABLED=1
+
+  worker-index-prep:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - nats
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=index-prep
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_OTEL_DISABLED=1
+
+  worker-indexer:
+    image: ipfsniffer-worker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    depends_on:
+      - nats
+      - opensearch
+    environment:
+      - IPFSNIFFER_ENV=prod
+      - IPFSNIFFER_WORKER_ROLE=indexer
+      - IPFSNIFFER_NATS_URL=nats://nats:4222
+      - IPFSNIFFER_OPENSEARCH_URL=http://opensearch:9200
+      - IPFSNIFFER_OPENSEARCH_INDEX=ipfsniffer-docs-v1
+      - IPFSNIFFER_OTEL_DISABLED=1
+
+  # Internal dependencies (not published to host)
+  nats:
+    image: nats:2.10.12
+    restart: unless-stopped
+    command: ["-js", "-m", "8222"]
+    volumes:
+      - nats_data:/data
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+
+  tika:
+    image: apache/tika:2.9.1.0
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      # Keep memory footprint sane by default; tune up for real indexing.
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+
+volumes:
+  nats_data:
+  redis_data:
+  opensearch_data:
+
+  # Separate Kubo repos (repo.lock prevents sharing)
+  kubo_repo_discovery:
+  kubo_repo_dht:
+  kubo_repo_resolver:
+  kubo_repo_fetcher:
+  kubo_repo_stream:
+  kubo_repo_ipnsdht:
+  kubo_repo_ipnspubsub:

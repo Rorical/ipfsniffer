@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message CidDiscovered {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  CidDiscoveredData data = 5;
+}
+
+message CidDiscoveredData {
+  string cid = 1;
+  string source = 2;
+  string source_detail = 3;
+  string peer_id = 4;
+  repeated string remote_addrs = 5;
+  string observed_at = 6;
+}

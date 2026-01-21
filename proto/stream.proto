@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+// StreamGet is a request to stream content bytes for a UnixFS file.
+message StreamGet {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  StreamGetData data = 5;
+}
+
+message StreamGetData {
+  string root_cid = 1;
+  string path = 2; // full /ipfs/<cid>/... path
+  int64 max_bytes = 3;
+}
+
+// StreamChunk is a chunk of bytes in response to StreamGet.
+message StreamChunk {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  StreamChunkData data = 5;
+}
+
+message StreamChunkData {
+  string stream_id = 1;
+  int64 seq = 2;
+  bytes data = 3;
+  bool eof = 4;
+  string error = 5;
+}

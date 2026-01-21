@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message TraceContext {
+  string traceparent = 1;
+  string tracestate = 2;
+}

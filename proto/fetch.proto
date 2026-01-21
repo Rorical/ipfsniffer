@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message FetchRequest {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  FetchRequestData data = 5;
+}
+
+message FetchRequestData {
+  string root_cid = 1;
+  string path = 2;
+  FetchLimits limits = 3;
+  FetchPolicy policy = 4;
+  FetchContent content = 5;
+}
+
+message FetchLimits {
+  int64 max_total_bytes = 1;
+  int64 max_file_bytes = 2;
+  int64 max_dag_nodes = 3;
+  int64 max_depth = 4;
+  int64 timeout_ms = 5;
+}
+
+message FetchPolicy {
+  repeated string skip_ext = 1;
+  repeated string skip_mime_prefix = 2;
+}
+
+message FetchContent {
+  int64 inline_max_bytes = 1;
+}
+
+message FetchResult {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  FetchResultData data = 5;
+}
+
+message FetchResultData {
+  string root_cid = 1;
+  string path = 2;
+  string node_type = 3;
+  int64 size_bytes = 4;
+  string mime = 5;
+  string ext = 6;
+  FetchContentResult content = 7;
+  FetchDirectory directory = 8;
+  string status = 9;
+  string skip_reason = 10;
+  string error = 11;
+  string fetched_at = 12;
+}
+
+message FetchContentResult {
+  string mode = 1;
+  string inline_base64 = 2;
+}
+
+message FetchDirectory {
+  repeated string entries = 1;
+  bool truncated = 2;
+}

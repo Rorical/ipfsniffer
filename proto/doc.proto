@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package ipfsniffer.v1;
+
+import "envelope.proto";
+
+option go_package = "github.com/Rorical/IPFSniffer/proto;ipfsnifferv1";
+
+message DocReady {
+  int32 v = 1;
+  string id = 2;
+  string ts = 3;
+  TraceContext trace = 4;
+  DocReadyData data = 5;
+}
+
+message DocReadyData {
+  string root_cid = 1;
+  string path = 2;
+  string node_type = 3;
+  string filename = 4;
+  string ext = 5;
+  string mime = 6;
+  int64 size_bytes = 7;
+  bool content_indexed = 8;
+  string text = 9;
+  bool text_truncated = 10;
+  string names_text = 11;
+  repeated string sources = 12;
+  string observed_at = 13;
+  string processed_at = 14;
+}
